@@ -13,6 +13,7 @@ from torchvision.models import densenet121 , DenseNet121_Weights
 
 BATCH_SIZE = 32
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+EPOCHS = 3
 
 label_columns = [
     "No Finding",
@@ -104,13 +105,48 @@ val_dataloader = DataLoader(validation_dataset,BATCH_SIZE,shuffle = False)
 weights = DenseNet121_Weights.DEFAULT
 model = densenet121(weights = weights)
 
+for param in model.features.parameters():
+    param.requires_grad = False
+
 model.classifier = nn.Linear(in_features = model.classifier.in_features,out_features = len(label_columns))
 
 model.to(DEVICE)
 
-images,labels = next(iter(train_dataloader))
-images = images.to(DEVICE)
-labels = labels.to(DEVICE)
+for name, param in model.named_parameters():
+    print(f"{name:50} {param.requires_grad}")
 
-outputs = model(images)
-print(outputs.shape)  # Should be [BATCH_SIZE, len(label_columns)]
+loss_fn = nn.BCEWithLogitsLoss()
+optimizer = torch.optim.AdamW(model.parameters(),lr = 1e-4,weight_decay = 1e-4)
+
+# for epoch in range(EPOCHS):
+#     train_loss = 0.0
+#     model.train()
+#     for images,labels in train_dataloader:
+#         images = images.to(DEVICE)
+#         labels = labels.to(DEVICE)
+
+#         logits = model(images)
+#         loss = loss_fn(logits,labels)
+
+#         optimizer.zero_grad()
+
+#         loss.backward()
+
+#         optimizer.step()
+
+#         train_loss += loss.item()
+
+#     val_loss = 0.0
+#     model.eval()
+#     with torch.no_grad():
+#         for images,labels in val_dataloader:
+#             images = images.to(DEVICE)
+#             labels = labels.to(DEVICE)
+
+#             logits = model(images)
+#             loss = loss_fn(logits,labels)
+
+#             val_loss += loss.item()
+
+#     print(f"Epoch {epoch+1}/{EPOCHS}, Train Loss: {train_loss/len(train_dataloader)}, Val Loss: {val_loss/len(val_dataloader)}")
+
