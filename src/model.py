@@ -118,35 +118,35 @@ for name, param in model.named_parameters():
 loss_fn = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.AdamW(model.parameters(),lr = 1e-4,weight_decay = 1e-4)
 
-# for epoch in range(EPOCHS):
-#     train_loss = 0.0
-#     model.train()
-#     for images,labels in train_dataloader:
-#         images = images.to(DEVICE)
-#         labels = labels.to(DEVICE)
+for epoch in range(EPOCHS):
+    train_loss = 0.0
+    model.train()
+    for images,labels in train_dataloader:
+        images = images.to(DEVICE)
+        labels = labels.to(DEVICE)
 
-#         logits = model(images)
-#         loss = loss_fn(logits,labels)
+        logits = model(images)
+        loss = loss_fn(logits,labels)
 
-#         optimizer.zero_grad()
+        optimizer.zero_grad()
 
-#         loss.backward()
+        loss.backward()
 
-#         optimizer.step()
+        optimizer.step()
 
-#         train_loss += loss.item()
+        train_loss += loss.item()
 
-#     val_loss = 0.0
-#     model.eval()
-#     with torch.no_grad():
-#         for images,labels in val_dataloader:
-#             images = images.to(DEVICE)
-#             labels = labels.to(DEVICE)
+    val_loss = 0.0
+    model.eval()
+    with torch.no_grad():
+        for images,labels in val_dataloader:
+            images = images.to(DEVICE)
+            labels = labels.to(DEVICE)
 
-#             logits = model(images)
-#             loss = loss_fn(logits,labels)
+            logits = model(images)
+            loss = loss_fn(logits,labels)
 
-#             val_loss += loss.item()
+            val_loss += loss.item()
 
-#     print(f"Epoch {epoch+1}/{EPOCHS}, Train Loss: {train_loss/len(train_dataloader)}, Val Loss: {val_loss/len(val_dataloader)}")
+    print(f"Epoch {epoch+1}/{EPOCHS}, Train Loss: {train_loss/len(train_dataloader)}, Val Loss: {val_loss/len(val_dataloader)}")
 
