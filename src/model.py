@@ -1,19 +1,4 @@
-import pandas as pd
-import torch
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-from pathlib import Path
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from torch import nn
-from PIL import Image
-from torchvision.models import densenet121 , DenseNet121_Weights
-
-
-BATCH_SIZE = 32
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-EPOCHS = 3
+from torchvision.models import DenseNet121
 
 label_columns = [
     "No Finding",
@@ -32,121 +17,13 @@ label_columns = [
     "Support Devices"
 ]
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu" 
 
-train_df = pd.read_csv("../data/train.csv")
-validation_df = pd.read_csv("../data/valid.csv")
+model = DenseNet121(weights=None)
+model.classifier = torch.nn.Linear(in_features=1024,out_features = len(label_columns))
 
-train_df["Path"] = train_df["Path"].str.replace(
-    "CheXpert-v1.0-small/",
-    "",
-    regex=False
-)
+checkpoint = torch.load("../weights/best_densenet_checkpoint.pth",map_location = DEVICE)
 
-validation_df["Path"] = validation_df["Path"].str.replace(
-    "CheXpert-v1.0-small/",
-    "",
-    regex=False
-)
-
-train_df[label_columns] = train_df[label_columns].fillna(0)
-validation_df[label_columns] = validation_df[label_columns].fillna(0)
-train_df[label_columns] = train_df[label_columns].replace(-1, 0)
-validation_df[label_columns] = validation_df[label_columns].replace(-1, 0)
-
-class ChestXrayDataset(Dataset):
-    def __init__(self,dataframe,root_dir,label_cols,transforms = None):
-        self.dataframe = dataframe
-        self.root_dir = root_dir
-        self.label_cols = label_cols
-        self.transform = transforms
-
-    def __len__(self):
-        return len(self.dataframe)
-    
-    def __getitem__(self, key):
-        row = self.dataframe.iloc[key]
-        image_path = self.root_dir / row["Path"]
-        image = Image.open(image_path).convert("RGB")
-        
-        if self.transform:
-            image = self.transform(image)
-
-        labels = row[self.label_cols].values.astype(np.float32)
-        labels = torch.tensor(labels)
-
-        return image,labels
-    
-
-train_transforms = transforms.Compose([
-    transforms.Resize((224,224)),
-    transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[0.485, 0.456, 0.406],
-        std=[0.229, 0.224, 0.225]
-    )
-])
-
-val_transforms = transforms.Compose([
-    transforms.Resize((224,224)),
-    transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[0.485, 0.456, 0.406],
-        std=[0.229, 0.224, 0.225]
-    )
-])
-
-train_dataset = ChestXrayDataset(dataframe = train_df, root_dir = BASE_DIR / "data", label_cols = label_columns, transforms = train_transforms)
-validation_dataset = ChestXrayDataset(dataframe = validation_df, root_dir = BASE_DIR / "data", label_cols = label_columns, transforms = val_transforms)
-
-train_dataloader = DataLoader(train_dataset,BATCH_SIZE,shuffle = True)
-val_dataloader = DataLoader(validation_dataset,BATCH_SIZE,shuffle = False)
-
-weights = DenseNet121_Weights.DEFAULT
-model = densenet121(weights = weights)
-
-for param in model.features.parameters():
-    param.requires_grad = False
-
-model.classifier = nn.Linear(in_features = model.classifier.in_features,out_features = len(label_columns))
+model.load_state_dict(checkpoint["model_state_dict"])
 
 model.to(DEVICE)
-
-for name, param in model.named_parameters():
-    print(f"{name:50} {param.requires_grad}")
-
-loss_fn = nn.BCEWithLogitsLoss()
-optimizer = torch.optim.AdamW(model.parameters(),lr = 1e-4,weight_decay = 1e-4)
-
-for epoch in range(EPOCHS):
-    train_loss = 0.0
-    model.train()
-    for images,labels in train_dataloader:
-        images = images.to(DEVICE)
-        labels = labels.to(DEVICE)
-
-        logits = model(images)
-        loss = loss_fn(logits,labels)
-
-        optimizer.zero_grad()
-
-        loss.backward()
-
-        optimizer.step()
-
-        train_loss += loss.item()
-
-    val_loss = 0.0
-    model.eval()
-    with torch.no_grad():
-        for images,labels in val_dataloader:
-            images = images.to(DEVICE)
-            labels = labels.to(DEVICE)
-
-            logits = model(images)
-            loss = loss_fn(logits,labels)
-
-            val_loss += loss.item()
-
-    print(f"Epoch {epoch+1}/{EPOCHS}, Train Loss: {train_loss/len(train_dataloader)}, Val Loss: {val_loss/len(val_dataloader)}")
-
