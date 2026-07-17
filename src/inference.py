@@ -1,5 +1,5 @@
 import torch
-from torch.transform import transforms
+from torchvision.transforms import transforms
 from model import model, DEVICE, label_columns
 from PIL import Image
 

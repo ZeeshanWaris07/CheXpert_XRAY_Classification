@@ -1,4 +1,5 @@
-from torchvision.models import DenseNet121
+from torchvision.models import densenet121
+import torch
 
 label_columns = [
     "No Finding",
@@ -19,7 +20,7 @@ label_columns = [
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu" 
 
-model = DenseNet121(weights=None)
+model = densenet121(weights=None)
 model.classifier = torch.nn.Linear(in_features=1024,out_features = len(label_columns))
 
 checkpoint = torch.load("../weights/best_densenet_checkpoint.pth",map_location = DEVICE)
