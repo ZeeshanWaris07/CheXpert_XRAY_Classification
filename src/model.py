@@ -18,6 +18,8 @@ label_columns = [
     "Support Devices"
 ]
 
+
+
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu" 
 
 model = densenet121(weights=None)
