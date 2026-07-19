@@ -1,6 +1,6 @@
 from fastapi import FastAPI,File,UploadFile
 from PIL import Image
-from inference import predict
+from .inference import predict
 
 app = FastAPI()
 
