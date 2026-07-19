@@ -31,6 +31,7 @@ THRESHOLDS = {
 }
 
 def predict(image : Image.Image):
+    image = image.convert("RGB")
     image = transform(image).unsqueeze(0).to(DEVICE)
 
     model.eval()
