@@ -1,0 +1,24 @@
+# Backend
+fastapi>=0.115.0
+uvicorn[standard]>=0.35.0
+python-multipart>=0.0.20
+
+# Deep Learning
+torch>=2.7.0
+torchvision>=0.22.0
+
+# Data Processing
+numpy>=2.0.0
+pandas>=2.2.0
+
+# Image Processing
+Pillow>=11.0.0
+
+# Machine Learning
+scikit-learn>=1.6.0
+
+# Visualization
+matplotlib>=3.9.0
+
+# Utilities
+tqdm>=4.66.0
